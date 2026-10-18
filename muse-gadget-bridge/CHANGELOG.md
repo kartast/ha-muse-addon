@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.7
+
+- Desktop-pairing fallback: new `identity_import` and `pairing_import`
+  options. Paste the identity.json / pairing.json contents from a
+  machine where pairing succeeded and the bridge seeds them into its
+  state directory at startup, adopting that identity and pairing.
+  Invalid JSON is rejected without touching existing files; clearing
+  the options afterwards is safe (nothing is ever deleted).
+
 ## 0.1.6
 
 - Accept the SDK tokens gadgets.muse.ai issues now: they carry a

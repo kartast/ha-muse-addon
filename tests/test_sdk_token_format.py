@@ -29,7 +29,10 @@ class RealTokenFormatTest(unittest.TestCase):
             os.environ.pop("MUSEGADGET_SDK_TOKEN", None)
         self.assertIsNotNone(token)
         self.assertTrue(token.startswith("mgst_"))
-        self.assertEqual(len(token), 48)
+        # Both issued shapes seen: 48 chars (43-char body, to Oct 2026)
+        # and 50 (45-char body, from Oct 2026). config.sdk_token() above
+        # is the real gate; this just pins the plausible range.
+        self.assertTrue(40 <= len(token) <= 64)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 name: Muse Gadget Bridge
-version: "0.1.6"
+version: "0.1.7"
 slug: muse_gadget_bridge
 description: >-
   Turn this Home Assistant into a Muse device: Muse can see every entity and
@@ -26,6 +26,10 @@ host_dbus: true
 options:
   sdk_token: ""
   wifi_ssid: ""
+  identity_import: ""
+  pairing_import: ""
 schema:
   sdk_token: password
   wifi_ssid: str?
+  identity_import: str?
+  pairing_import: str?

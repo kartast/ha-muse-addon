@@ -297,3 +297,18 @@ add-on options (the earlier trimmed 48-char candidate was replaced).
 If pairing still aborts ~3 s after consent with this backend-fresh
 token in the status, the token theory is dead and the abort is
 app/account-side — escalate with the full attempt logs.
+
+## Addendum, 2026-10-18: 0.1.7 identity/pairing import (desktop pairing fallback)
+
+Attempts 8-9 closed the Green-side matrix: with HA's Bluetooth
+integration disabled (radio dedicated) the app reached wifi_scan, and
+with the real SSID "Plato2" offered and displayed it still dismissed
+1.3 s after the scan result. Upstream diff (Oct-5 tree 74a5e2d vs HEAD
+f60347ae) shows the wire pairing code is byte-identical — no SDK
+regression. What differs is the host BlueZ environment the SDK
+installer creates on a desktop (ExchangeMTU cap 256, battery plugin
+off) — not changeable from an add-on under HAOS. 0.1.7 therefore adds
+the import path from DESKTOP_PAIRING.md: identity_import /
+pairing_import options seeded by run.sh at boot (validated JSON,
+0600, change-only, never deletes). Pair on omarchy, paste the two
+files into the add-on Configuration tab, restart, done.

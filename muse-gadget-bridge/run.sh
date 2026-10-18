@@ -66,9 +66,58 @@ print(ssid.strip() if isinstance(ssid, str) else "")
 PYEOF
 }
 
+import_state_files() {
+    # Seeds identity.json / pairing.json from the identity_import /
+    # pairing_import options: the desktop-pairing fallback, for pairing on
+    # a machine whose Bluetooth environment works and running here. Prints
+    # one line per file imported or rejected; empty options are skipped and
+    # nothing is ever deleted, so clearing the options afterwards is safe.
+    python3 - "$OPTIONS_JSON" "$STATE_DIR" <<'PYEOF'
+import json, os, sys
+options_path, state_dir = sys.argv[1], sys.argv[2]
+try:
+    with open(options_path, encoding="utf-8") as f:
+        options = json.load(f)
+except (OSError, ValueError):
+    sys.exit(0)
+for option_key, filename in (("identity_import", "identity.json"),
+                             ("pairing_import", "pairing.json")):
+    raw = options.get(option_key)
+    if not isinstance(raw, str) or not raw.strip():
+        continue
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        print(f"rejected {filename}: the {option_key} option is not valid JSON")
+        continue
+    if not isinstance(data, dict):
+        print(f"rejected {filename}: the {option_key} option must be a JSON object")
+        continue
+    payload = json.dumps(data, indent=2) + "\n"
+    target = os.path.join(state_dir, filename)
+    try:
+        with open(target, encoding="utf-8") as f:
+            if f.read() == payload:
+                continue
+    except OSError:
+        pass
+    os.makedirs(state_dir, mode=0o700, exist_ok=True)
+    fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(payload)
+    print(f"imported {filename}")
+PYEOF
+}
+
 main() {
     mkdir -p "$STATE_DIR" "$(dirname "$MUSEGADGET_SOCKET")"
     chmod 700 "$STATE_DIR" 2>/dev/null || true
+
+    while IFS= read -r import_line; do
+        [ -n "$import_line" ] && say "State import: $import_line"
+    done <<EOF
+$(import_state_files)
+EOF
 
     case "$(sync_sdk_token)" in
         written) say "SDK token loaded from the add-on configuration." ;;
