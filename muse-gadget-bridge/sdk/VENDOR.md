@@ -33,6 +33,13 @@ Changes versus upstream:
   empty list, observed live 2026-10-18), and the probe result is logged in
   `device_info`, `_handle_wifi_scan`, and `_run_provision`. The probe
   still gates provisioning itself.
+- `src/musegadget/network.py` (0.1.3) — `active_wifi_ssid` first checks
+  the `MUSEGADGET_WIFI_SSID` environment variable. The bridge host is
+  wired and has no Wi-Fi radio, so neither nmcli nor wpa_cli can produce
+  an SSID and the scan fell back to the placeholder label, on which the
+  Muse app stops before provisioning (upstream's own network tests
+  document that failure mode). `run.sh` sets the variable from the new
+  `wifi_ssid` add-on option. One test added in `tests/test_network.py`.
 - `tests/test_ble_setup.py` — the upstream disconnect test asserted the
   clearing behaviour and was rewritten for the resume behaviour; two tests
   were added (setup completing across a disconnect, and a fresh hello

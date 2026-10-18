@@ -76,6 +76,16 @@ def test_reports_the_ssid_on_a_host_networkmanager_does_not_manage(monkeypatch, 
     assert network.current_connection_entry()["ssid"] == "Example Net"
 
 
+def test_configured_ssid_wins_over_detected_sources(monkeypatch):
+    # Muse-gadget-bridge: a wired bridge host has no Wi-Fi radio to read,
+    # so the household SSID can be configured via the environment.
+    monkeypatch.setenv("MUSEGADGET_WIFI_SSID", "Configured Net")
+    monkeypatch.setattr(network, "_ssid_from_nmcli", lambda: "From NM")
+    monkeypatch.setattr(network, "_ssid_from_wpa_cli", lambda: "From wpa")
+    assert network.active_wifi_ssid() == "Configured Net"
+    assert network.current_connection_entry()["ssid"] == "Configured Net"
+
+
 def test_wpa_cli_is_not_used_when_nmcli_answers(monkeypatch):
     monkeypatch.setattr(network, "_ssid_from_nmcli", lambda: "From NM")
     monkeypatch.setattr(network, "_ssid_from_wpa_cli", lambda: "From wpa")

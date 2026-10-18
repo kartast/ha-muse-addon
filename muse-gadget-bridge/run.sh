@@ -48,6 +48,24 @@ print("written")
 PYEOF
 }
 
+configured_wifi_ssid() {
+    # Echoes the wifi_ssid option — the household Wi-Fi name the pairing
+    # scan should offer — or nothing when it is not set. This host is wired
+    # and has no Wi-Fi radio to read an SSID from, and the Muse app stops
+    # before provisioning when the scan offers only the placeholder label,
+    # so the real name has to come from the configuration.
+    python3 - "$OPTIONS_JSON" <<'PYEOF'
+import json, sys
+try:
+    with open(sys.argv[1], encoding="utf-8") as f:
+        options = json.load(f)
+except (OSError, ValueError):
+    print(""); sys.exit(0)
+ssid = options.get("wifi_ssid")
+print(ssid.strip() if isinstance(ssid, str) else "")
+PYEOF
+}
+
 main() {
     mkdir -p "$STATE_DIR" "$(dirname "$MUSEGADGET_SOCKET")"
     chmod 700 "$STATE_DIR" 2>/dev/null || true
@@ -56,6 +74,12 @@ main() {
         written) say "SDK token loaded from the add-on configuration." ;;
         *) say "WARNING: no SDK token in the add-on configuration. Set sdk_token, then restart the add-on." ;;
     esac
+
+    wifi_ssid="$(configured_wifi_ssid)"
+    if [ -n "$wifi_ssid" ]; then
+        export MUSEGADGET_WIFI_SSID="$wifi_ssid"
+        say "Pairing Wi-Fi scan will offer the configured network name."
+    fi
 
     if [ -S /run/dbus/system_bus_socket ] && [ -z "${DBUS_SYSTEM_BUS_ADDRESS:-}" ]; then
         export DBUS_SYSTEM_BUS_ADDRESS="unix:path=/run/dbus/system_bus_socket"

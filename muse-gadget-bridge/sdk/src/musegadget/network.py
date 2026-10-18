@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import socket
@@ -122,6 +123,14 @@ def _ssid_from_wpa_cli() -> str | None:
 
 def active_wifi_ssid() -> str | None:
     """SSID of the active Wi-Fi connection, via NetworkManager or wpa_supplicant."""
+    # Muse-gadget-bridge change: the bridge host is wired and has no Wi-Fi
+    # radio to read an SSID from, so the household network name can be
+    # configured instead (the add-on's wifi_ssid option, passed through
+    # this variable). Without a real SSID the scan falls back to the
+    # placeholder label and the Muse app stops before provisioning.
+    configured = os.environ.get("MUSEGADGET_WIFI_SSID", "").strip()
+    if configured:
+        return configured
     return _ssid_from_nmcli() or _ssid_from_wpa_cli()
 
 

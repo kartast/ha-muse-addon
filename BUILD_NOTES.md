@@ -244,3 +244,16 @@ a fresh hello still restarts it). Divergence list is therefore now two
 source files (`executor.py`, `ble_setup.py`) plus the rewritten/added
 tests in `tests/test_ble_setup.py`; see `sdk/VENDOR.md`. Verified: SDK
 suite 219 passed / 1 skipped, add-on suite 28/28.
+
+## Addendum, 2026-10-18: 0.1.3 configurable scan SSID
+
+Second and third attempts (0.1.1/0.1.2) completed the handshake and the
+wifi_scan exchange, then the app disconnected at the Wi-Fi step without
+sending provision_v2. Probe logging in 0.1.2 showed the container's
+connectivity probe is fine (online=True); the scan offered the
+placeholder label "Use current connection" because the Green is wired and
+has no Wi-Fi SSID source (no nmcli/wpa_cli data). Upstream's own
+test_network.py documents that the app stops before provision_v2 when the
+entry falls back to that label. 0.1.3 adds a `wifi_ssid` add-on option:
+run.sh exports it as MUSEGADGET_WIFI_SSID and network.active_wifi_ssid
+prefers it, so the scan offers the household network by its real name.

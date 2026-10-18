@@ -33,6 +33,21 @@ def sync(options, tmp):
     return proc.stdout.strip(), os.path.join(tmp, "state", "sdk_token")
 
 
+def read_ssid(options, tmp):
+    """Run configured_wifi_ssid; returns what it echoes."""
+    env = dict(os.environ)
+    options_path = os.path.join(tmp, "options.json")
+    if options is not None:
+        with open(options_path, "w", encoding="utf-8") as f:
+            json.dump(options, f)
+    env["OPTIONS_JSON"] = options_path
+    proc = subprocess.run(
+        ["bash", "-c", f'source "{RUN_SH}" >/dev/null 2>&1; configured_wifi_ssid'],
+        env=env, capture_output=True, text=True, timeout=30,
+    )
+    return proc.stdout.strip()
+
+
 class RunShTest(unittest.TestCase):
     def test_token_written_stripped_with_0600(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -53,6 +68,16 @@ class RunShTest(unittest.TestCase):
             result, token_file = sync(None, tmp)
             self.assertEqual(result, "absent")
             self.assertFalse(os.path.exists(token_file))
+
+    def test_wifi_ssid_read_stripped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(read_ssid({"wifi_ssid": "  Home Net  "}, tmp), "Home Net")
+
+    def test_wifi_ssid_unset_or_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(read_ssid({"wifi_ssid": ""}, tmp), "")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(read_ssid(None, tmp), "")
 
 
 if __name__ == "__main__":

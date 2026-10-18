@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3
+
+- Fix pairing stopping at the Wi-Fi step: the Muse app only continues to
+  provisioning when the scan offers a real network name (the SDK's own
+  tests document the app stopping on the placeholder label). This host is
+  wired and has no Wi-Fi radio to read an SSID from, so a new `wifi_ssid`
+  option supplies the household network name for the scan to offer.
+
 ## 0.1.2
 
 - Fix the app exiting at the Wi-Fi step: the Wi-Fi scan now always offers

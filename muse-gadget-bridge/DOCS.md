@@ -10,10 +10,11 @@ service call Muse makes is written to an audit log.
 | Option | What it is |
 | --- | --- |
 | `sdk_token` | Your Muse Gadgets SDK token (`mgst_…`) from [gadgets.muse.ai](https://gadgets.muse.ai/settings/sdk-tokens) (Account → SDK tokens). Paste it here; it is stored only in this add-on's private data. Changing it later requires re-pairing (Muse records the token at pairing time). |
+| `wifi_ssid` | The name of your home Wi-Fi network, exactly as it appears on your phone. This machine is wired and has no Wi-Fi radio to read the name from; during pairing the bridge offers this name as its current connection, and the Muse app matches it against the network your phone is on. Without it, pairing stops at the Wi-Fi step. The bridge ignores any Wi-Fi credentials the app sends back. |
 
 ## Pairing
 
-1. Set `sdk_token` above and start the add-on.
+1. Set `sdk_token` and `wifi_ssid` above and start the add-on.
 2. Open the add-on **Log** tab. On first start it opens a 10-minute Bluetooth
    pairing window and prints the device name (`MuseGadgetXXXXXX`).
 3. Stand near this machine with your phone. In the Muse app: **Settings →
