@@ -269,7 +269,10 @@ def test_offline_device_reports_wifi_failure_and_can_retry():
     h = Harness(online=False)
     h.pair()
     h.send_encrypted({"action": "wifi_scan"})
-    assert h.opened()[-1]["networks"] == []
+    # Muse-gadget-bridge change: the scan always offers the current
+    # connection (an empty list made the app exit setup); the connectivity
+    # probe still gates provisioning itself, which is what retries here.
+    assert h.opened()[-1]["networks"] == [{"ssid": "HomeNet", "rssi": -40, "secure": False}]
 
     h.send_encrypted(PROVISION)
     h.wait_for_status("wifi_failed")

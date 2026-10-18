@@ -27,10 +27,17 @@ Changes versus upstream:
   now survives a disconnect, still bounded by the pairing deadlines in
   `pairing.py`; a fresh `pairing_client_hello` still restarts it. Marked
   "Muse-gadget-bridge change" in the code.
+- `src/musegadget/ble_setup.py` (0.1.2) — `_handle_wifi_scan` always
+  offers the current connection instead of an empty list when the
+  connectivity probe fails (the app exited setup at the Wi-Fi step on an
+  empty list, observed live 2026-10-18), and the probe result is logged in
+  `device_info`, `_handle_wifi_scan`, and `_run_provision`. The probe
+  still gates provisioning itself.
 - `tests/test_ble_setup.py` — the upstream disconnect test asserted the
   clearing behaviour and was rewritten for the resume behaviour; two tests
   were added (setup completing across a disconnect, and a fresh hello
-  restarting the session after a disconnect).
+  restarting the session after a disconnect). The offline test's scan
+  assertion was updated for the always-offer change above.
 - `.gitignore` was dropped. Nothing else was added, removed, or changed.
 
 Upstream's `install.sh` is kept for reference; the add-on does not run it

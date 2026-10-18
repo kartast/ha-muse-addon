@@ -199,13 +199,16 @@ class SetupController:
             self.send_status("error_unknown_action")
 
     def device_info(self) -> dict:
+        ready = self._network.is_online()
+        # Muse-gadget-bridge: log the probe result (see _handle_wifi_scan).
+        log.info("device_info: connectivity probe network_ready=%s", ready)
         info = {
             "type": "device_info",
             "node_id": self._identity.node_id,
             "version": self._version,
             **self._pairing.device_info(),
             "build_sha": "",
-            "network_ready": self._network.is_online(),
+            "network_ready": ready,
         }
         return info
 
@@ -238,7 +241,16 @@ class SetupController:
         self.send_status("pairing_confirmed", generation)
 
     def _handle_wifi_scan(self) -> None:
-        networks = [self._network.current_connection_entry()] if self._network.is_online() else []
+        # Muse-gadget-bridge change: upstream offers an empty network list
+        # when its connectivity probe fails, and the app then exits setup at
+        # the Wi-Fi step (observed live, 2026-10-18). This bridge is wired
+        # into an always-online host, so always offer the current
+        # connection. The probe result is logged for diagnosis and still
+        # gates provisioning itself below.
+        online = self._network.is_online()
+        networks = [self._network.current_connection_entry()]
+        log.info("wifi_scan: connectivity probe online=%s, offering %s",
+                 online, [n.get("ssid") for n in networks])
         self.send_encrypted_json({"type": "wifi_scan_result", "networks": networks})
 
     def _handle_provision(self, command: dict) -> None:
@@ -286,7 +298,10 @@ class SetupController:
     def _run_provision(self, credentials: Credentials, generation: int) -> None:
         try:
             self.send_status("wifi_connecting", generation)
-            if not self._network.is_online():
+            online = self._network.is_online()
+            # Muse-gadget-bridge: log the probe result (see _handle_wifi_scan).
+            log.info("provision: connectivity probe online=%s", online)
+            if not online:
                 # Stay in provisioning so the app can retry, as the firmware does.
                 self._pairing.extend_provisioning(generation)
                 self.send_status("wifi_failed", generation)
