@@ -1,0 +1,4 @@
+#!/command/with-contenv bash
+# with-contenv loads the container environment (SUPERVISOR_TOKEN and friends)
+# that s6 otherwise hides from services; run.sh and the service need it.
+exec /opt/musegadget/run.sh

@@ -1,0 +1,29 @@
+name: Muse Gadget Bridge
+version: "0.1.0"
+slug: muse_gadget_bridge
+description: >-
+  Turn this Home Assistant into a Muse device: Muse can see every entity and
+  call every service (full access, by design). Every service call is written to
+  an audit log. Pairs with the Muse app over Bluetooth.
+url: https://github.com/facebookincubator/muse-gadget-sdk
+arch:
+  - aarch64
+  - amd64
+stage: experimental
+# The HA base image runs its own init (s6-overlay); the service is defined in
+# rootfs/etc/s6-overlay/s6-rc.d/musegadget.
+init: false
+boot: auto
+startup: application
+timeout: 30
+# Core REST API via the Supervisor proxy (http://supervisor/core/api) with the
+# SUPERVISOR_TOKEN the Supervisor injects into this add-on.
+homeassistant_api: true
+# Mount the host D-Bus system bus (/run/dbus) so the bridge can register its
+# BLE GATT service and advertisement with the host's BlueZ, sharing the USB
+# Bluetooth adapter Home Assistant already uses. See BUILD_NOTES.md.
+host_dbus: true
+options:
+  sdk_token: ""
+schema:
+  sdk_token: password

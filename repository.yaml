@@ -1,0 +1,5 @@
+# Home Assistant add-on repository: Muse Gadget Bridge.
+# When publishing, change `url` to the repository's own GitHub URL.
+name: Muse Gadget Bridge add-ons
+url: https://github.com/facebookincubator/muse-gadget-sdk
+maintainer: Karta (local build)
