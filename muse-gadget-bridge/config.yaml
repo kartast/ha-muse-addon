@@ -1,5 +1,5 @@
 name: Muse Gadget Bridge
-version: "0.1.4"
+version: "0.1.5"
 slug: muse_gadget_bridge
 description: >-
   Turn this Home Assistant into a Muse device: Muse can see every entity and

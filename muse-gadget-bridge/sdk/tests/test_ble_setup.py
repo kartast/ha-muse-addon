@@ -137,6 +137,7 @@ def test_device_info_matches_the_pairing_transcript_fields():
     assert info["type"] == "device_info"
     assert info["node_id"] == APP["node_id"]
     assert info["version"] == APP["firmware_version"]
+    assert info["firmware_version"] == APP["firmware_version"]
     assert info["model"] == "hatch_link"
     assert info["pairing_protocol"] == 5
     assert info["pairing_auth"] == "none"

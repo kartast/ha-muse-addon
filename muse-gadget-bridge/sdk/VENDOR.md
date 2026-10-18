@@ -28,7 +28,9 @@ Changes versus upstream:
   `pairing.py`; a fresh `pairing_client_hello` still restarts it. Marked
   "Muse-gadget-bridge change" in the code.
 - `src/musegadget/ble_setup.py` (0.1.2, scan behaviour revised in
-  0.1.4) — `_handle_wifi_scan` never offers the placeholder-labelled
+  0.1.4, device-info field added in 0.1.5) — `device_info` also
+  carries `firmware_version` next to `version`, matching the field set
+  of a known-working pairing. `_handle_wifi_scan` never offers the placeholder-labelled
   current-connection entry: when no real SSID is detected or configured
   it returns an empty network list so the user can enter their network
   in the app (the Muse app stops before provisioning on the placeholder

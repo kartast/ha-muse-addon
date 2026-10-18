@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5
+
+- The pairing device-info response now also carries `firmware_version`
+  (alongside `version`), matching the field set of a known-working
+  pairing supplied by the user. Five pairing attempts died ~3 s after
+  the app consented, before provisioning; this closes the one
+  remaining protocol-field gap against that reference.
+
 ## 0.1.4
 
 - The Wi-Fi scan no longer offers the placeholder "Use current

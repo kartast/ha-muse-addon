@@ -267,3 +267,20 @@ around it: _handle_wifi_scan returns an empty network list whenever the
 only entry would carry the placeholder label (no detected SSID and no
 wifi_ssid option set), so the app's own network entry path is reachable.
 A detected or configured real SSID is still offered by name.
+
+## Addendum, 2026-10-18: reference diff and 0.1.5
+
+Karta supplied the protocol notes from his working homelink pairing
+(relay, paired from a Linux desktop). Line-by-line diff of the vendored
+SDK against that reference: service/RX/TX UUIDs, advertisement
+(ServiceUUIDs + ManufacturerData {0xFFFF:[0x00]}), pairing_ready fields,
+transcript/crypto (proven live by two-way encrypted traffic), the
+sdk_token's top-level placement in the pairing_confirmed status, and the
+identity naming all match; upstream HEAD is exactly our snapshot
+(f60347ae), so no upstream fix exists. The one field gap: the reference
+device_info carries firmware_version alongside version; ours had only
+version. 0.1.5 adds it. Remaining untested theory if this fails: the SDK
+token itself (a fresh token minted for this gadget rules it out) — and
+after that, the BT 4.0 dongle environment (his working pairing used a
+desktop's modern Bluetooth with ExchangeMTU=256; the Green negotiates
+185 through the CSR8510).

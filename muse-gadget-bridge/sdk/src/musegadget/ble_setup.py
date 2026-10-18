@@ -207,6 +207,11 @@ class SetupController:
             "type": "device_info",
             "node_id": self._identity.node_id,
             "version": self._version,
+            # Muse-gadget-bridge change: also carry firmware_version,
+            # matching the field set of a known-working pairing (the
+            # reference device_info includes it alongside version); the
+            # app may read it when registering the device after consent.
+            "firmware_version": self._version,
             **self._pairing.device_info(),
             "build_sha": "",
             "network_ready": ready,
