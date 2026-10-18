@@ -127,11 +127,18 @@ class SetupController:
             self._inbox.put(message)
 
     def on_disconnect(self) -> None:
-        log.info("BLE client disconnected; clearing pairing session")
+        # Muse-gadget-bridge change (upstream clears the session here):
+        # the Muse app drops and re-opens the BLE connection between the
+        # pairing confirmation and the Wi-Fi/provisioning step. Clearing the
+        # session on disconnect makes that continuation impossible, so setup
+        # can never complete. Keep the session instead: its own deadlines
+        # (PairingSession CONFIRMED/PROVISIONING timeouts) still bound it,
+        # the session keys belong to the connection that made them, and a
+        # fresh pairing_client_hello always starts a new session. Only the
+        # packet assembler is reset, so a partial frame from the dead
+        # connection cannot leak into the next one.
+        log.info("BLE client disconnected; keeping pairing session for resume")
         self._assembler.reset()
-        with self._state_lock:
-            self._plaintext_blocked = False
-        self._pairing.reset()
 
     # -- Lifecycle --------------------------------------------------------------
 

@@ -12,11 +12,25 @@ this folder.
 
 Changes versus upstream:
 
-- `src/musegadget/executor.py` — the only modified file. Adds four commands
+- `src/musegadget/executor.py` — adds four commands
   (`ha.get_states`, `ha.call_service`, `ha.get_config`, `ha.camera_snapshot`)
   in `COMMAND_SPECS` plus handler branches in `Executor.run`, an audit log
   for service calls, and a module-docstring note. Everything upstream in the
   file is untouched; the additions are marked "Home Assistant bridge".
+- `src/musegadget/ble_setup.py` — `SetupController.on_disconnect` no longer
+  clears the pairing session. In the field the Muse app drops and re-opens
+  the BLE connection between the pairing confirmation and the
+  Wi-Fi/provisioning step; clearing the session on disconnect made setup
+  impossible to complete (observed on the first install, 2026-10-18: the
+  handshake reached "pairing confirmed", the app reconnected twice inside
+  the confirmation window, and the window closed unpaired). The session
+  now survives a disconnect, still bounded by the pairing deadlines in
+  `pairing.py`; a fresh `pairing_client_hello` still restarts it. Marked
+  "Muse-gadget-bridge change" in the code.
+- `tests/test_ble_setup.py` — the upstream disconnect test asserted the
+  clearing behaviour and was rewritten for the resume behaviour; two tests
+  were added (setup completing across a disconnect, and a fresh hello
+  restarting the session after a disconnect).
 - `.gitignore` was dropped. Nothing else was added, removed, or changed.
 
 Upstream's `install.sh` is kept for reference; the add-on does not run it

@@ -230,3 +230,17 @@ Muse, and a live HA on the other end of the proxy.
    look for the `audit …` line in the log.
 7. Not paired in time, or pairing again later: **restart the add-on** —
    while unpaired, every start re-opens the 10-minute window.
+
+## Addendum, 2026-10-18: 0.1.1 pairing-resume fix
+
+First live install reached "pairing confirmed" but never completed: the
+Muse app dropped the BLE connection ~2 s after the confirmation and
+reconnected twice inside the confirmation window, while the vendored
+`SetupController.on_disconnect` cleared the pairing session on every
+disconnect, so the continuation (wifi_scan / provision_v2) had no session
+to land on and the window closed unpaired. `ble_setup.py` now keeps the
+session across disconnects (still bounded by the `pairing.py` deadlines;
+a fresh hello still restarts it). Divergence list is therefore now two
+source files (`executor.py`, `ble_setup.py`) plus the rewritten/added
+tests in `tests/test_ble_setup.py`; see `sdk/VENDOR.md`. Verified: SDK
+suite 219 passed / 1 skipped, add-on suite 28/28.

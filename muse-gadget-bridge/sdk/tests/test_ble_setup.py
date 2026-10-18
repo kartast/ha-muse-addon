@@ -174,6 +174,28 @@ def test_full_setup_flow():
     assert h.pairing.state is PairingState.PROVISIONING
 
 
+def test_setup_resumes_after_disconnect():
+    # The Muse app drops and re-opens the BLE connection between the
+    # pairing confirmation and the Wi-Fi step. The session must survive the
+    # disconnect so setup can continue on the new connection.
+    h = Harness()
+    h.pair()
+    assert h.statuses() == ["pairing_confirmed"]
+
+    h.controller.on_disconnect()
+
+    h.send_encrypted({"action": "wifi_scan"})
+    scan = h.opened()[-1]
+    assert scan == {"type": "wifi_scan_result",
+                    "networks": [{"ssid": "HomeNet", "rssi": -40, "secure": False}]}
+
+    h.send_encrypted(PROVISION)
+    h.wait_for_status("auth_ok")
+    assert h.statuses() == ["pairing_confirmed", "wifi_connecting", "wifi_connected", "auth_ok"]
+    assert h.completed.is_set()
+    assert h.pairing.state is PairingState.PROVISIONING
+
+
 def test_setup_commands_need_encryption():
     h = Harness()
     h.send({"action": "wifi_scan"})
@@ -270,13 +292,27 @@ def test_rejected_token_reports_auth_failed_and_disconnects():
     assert not h.completed.is_set()
 
 
-def test_disconnect_clears_the_session():
+def test_disconnect_keeps_the_session_for_resume():
+    # Muse-gadget-bridge change: upstream cleared the session on
+    # disconnect, but the Muse app re-opens the BLE connection between
+    # confirming and provisioning, so clearing made setup impossible.
     h = Harness()
     h.pair()
     h.controller.on_disconnect()
-    assert h.pairing.state is PairingState.IDLE
+    assert h.pairing.state is PairingState.READY
+    # Plaintext stays blocked while the kept session is live.
+    before = len(h.transport.messages)
     h.send({"action": "wifi_scan"})
-    assert h.transport.messages[-1] == "error_encryption_required"
+    assert len(h.transport.messages) == before
+
+
+def test_hello_after_disconnect_restarts_the_session():
+    h = Harness()
+    h.pair()
+    h.controller.on_disconnect()
+    h.send(hello())
+    assert h.transport.messages[-1]["type"] == "pairing_ready"
+    assert h.pairing.state is PairingState.WAIT_CLIENT_FINISHED
 
 
 def test_writes_are_reassembled_before_dispatch():
