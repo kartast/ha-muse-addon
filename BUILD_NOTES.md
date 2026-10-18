@@ -284,3 +284,16 @@ token itself (a fresh token minted for this gadget rules it out) — and
 after that, the BT 4.0 dongle environment (his working pairing used a
 desktop's modern Bluetooth with ExchangeMTU=256; the Green negotiates
 185 through the CSR8510).
+
+## Addendum, 2026-10-18: 0.1.6 longer SDK tokens accepted as issued
+
+Karta minted a fresh SDK token: 50 characters (45-char body), pasted
+three times byte-identically, and confirmed "this is correct, use
+as_is". Upstream's config regex pins the original 48-char shape
+(mgst_ + 43), so the stock SDK would have refused this genuine token
+before pairing could start. 0.1.6 widens the pattern to body lengths
+35-59 and lets the backend judge. His exact token now sits in the
+add-on options (the earlier trimmed 48-char candidate was replaced).
+If pairing still aborts ~3 s after consent with this backend-fresh
+token in the status, the token theory is dead and the abort is
+app/account-side — escalate with the full attempt logs.

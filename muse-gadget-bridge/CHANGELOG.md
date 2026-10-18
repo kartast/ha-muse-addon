@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.6
+
+- Accept the SDK tokens gadgets.muse.ai issues now: they carry a
+  45-character body (50 characters total), while the SDK's validator
+  pinned the original 43-character shape and refused the token before
+  pairing could start. Validation now accepts any plausible issued
+  length; the Muse backend remains the real judge at pairing time.
+
 ## 0.1.5
 
 - The pairing device-info response now also carries `firmware_version`

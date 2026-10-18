@@ -40,11 +40,19 @@ def test_sdk_token_environment_overrides_the_file(tmp_path, monkeypatch):
     assert config.sdk_token(tmp_path) == TOKEN
 
 
-@pytest.mark.parametrize("bad", ["mgst_short", "mgst_" + "A" * 43 + "x", "mgst_" + "A" * 42 + "B"])
+@pytest.mark.parametrize("bad", ["mgst_short", "mgst_" + "A" * 70, "mgst_" + "A" * 44 + "!"])
 def test_sdk_token_rejects_tokens_gadgets_could_not_issue(tmp_path, monkeypatch, bad):
     monkeypatch.setenv(config.SDK_TOKEN_ENV, bad)
     with pytest.raises(ValueError):
         config.sdk_token(tmp_path)
+
+
+def test_sdk_token_accepts_the_longer_tokens_now_issued(tmp_path, monkeypatch):
+    # Muse-gadget-bridge: gadgets.muse.ai now issues tokens with a
+    # 45-character body (50 characters in total); upstream's exact-length
+    # pattern refused them before pairing could start.
+    monkeypatch.setenv(config.SDK_TOKEN_ENV, "mgst_" + "A" * 45)
+    assert config.sdk_token(tmp_path) == "mgst_" + "A" * 45
 
 
 def test_load_json_treats_undecodable_bytes_as_missing(tmp_path):

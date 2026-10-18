@@ -29,8 +29,13 @@ IDENTITY_FILE = "identity.json"
 PAIRING_FILE = "pairing.json"
 SDK_TOKEN_ENV = "MUSEGADGET_SDK_TOKEN"
 SDK_TOKEN_FILE = "sdk_token"
-# mgst_ plus 43 canonical base64url characters, as issued by gadgets.muse.ai.
-_SDK_TOKEN = re.compile(r"mgst_[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]")
+# mgst_ plus a base64url body, as issued by gadgets.muse.ai.
+_SDK_TOKEN = re.compile(r"mgst_[A-Za-z0-9_-]{35,59}")
+# Muse-gadget-bridge change: upstream pins the original 43-character body
+# exactly, but the site now issues longer tokens (a 45-character body,
+# user-confirmed 2026-10-18); the strict pattern made pairing refuse a
+# genuine token before it could start. Accept any plausible issued
+# length and let the Muse backend judge the token at pairing time.
 
 
 def state_dir() -> Path:

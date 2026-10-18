@@ -27,6 +27,12 @@ Changes versus upstream:
   now survives a disconnect, still bounded by the pairing deadlines in
   `pairing.py`; a fresh `pairing_client_hello` still restarts it. Marked
   "Muse-gadget-bridge change" in the code.
+- `src/musegadget/config.py` (0.1.6) — the SDK-token pattern accepts
+  body lengths 35–59 instead of exactly 43: gadgets.muse.ai now issues
+  45-character bodies (50 characters total, user-confirmed "use as is"
+  2026-10-18), and the strict upstream pattern refused a genuine token
+  before pairing could start. `tests/test_config.py` adjusted (garbage
+  still rejected; a longer-token acceptance test added).
 - `src/musegadget/ble_setup.py` (0.1.2, scan behaviour revised in
   0.1.4, device-info field added in 0.1.5) — `device_info` also
   carries `firmware_version` next to `version`, matching the field set
