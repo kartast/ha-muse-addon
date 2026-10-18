@@ -257,3 +257,13 @@ test_network.py documents that the app stops before provision_v2 when the
 entry falls back to that label. 0.1.3 adds a `wifi_ssid` add-on option:
 run.sh exports it as MUSEGADGET_WIFI_SSID and network.active_wifi_ssid
 prefers it, so the scan offers the household network by its real name.
+
+## Addendum, 2026-10-18: 0.1.4 scan offers nothing rather than the label
+
+Karta declined to hand over the SSID for pre-configuration — he wants to
+type his network in the app during Add Device ("i can put myself during
+add device, fix it"). So 0.1.4 removes the blocker instead of routing
+around it: _handle_wifi_scan returns an empty network list whenever the
+only entry would carry the placeholder label (no detected SSID and no
+wifi_ssid option set), so the app's own network entry path is reachable.
+A detected or configured real SSID is still offered by name.

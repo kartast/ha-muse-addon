@@ -27,11 +27,14 @@ Changes versus upstream:
   now survives a disconnect, still bounded by the pairing deadlines in
   `pairing.py`; a fresh `pairing_client_hello` still restarts it. Marked
   "Muse-gadget-bridge change" in the code.
-- `src/musegadget/ble_setup.py` (0.1.2) — `_handle_wifi_scan` always
-  offers the current connection instead of an empty list when the
-  connectivity probe fails (the app exited setup at the Wi-Fi step on an
-  empty list, observed live 2026-10-18), and the probe result is logged in
-  `device_info`, `_handle_wifi_scan`, and `_run_provision`. The probe
+- `src/musegadget/ble_setup.py` (0.1.2, scan behaviour revised in
+  0.1.4) — `_handle_wifi_scan` never offers the placeholder-labelled
+  current-connection entry: when no real SSID is detected or configured
+  it returns an empty network list so the user can enter their network
+  in the app (the Muse app stops before provisioning on the placeholder
+  label — documented in the SDK's network tests, observed live
+  2026-10-18). The connectivity probe result is logged in
+  `device_info`, `_handle_wifi_scan`, and `_run_provision`; the probe
   still gates provisioning itself.
 - `src/musegadget/network.py` (0.1.3) — `active_wifi_ssid` first checks
   the `MUSEGADGET_WIFI_SSID` environment variable. The bridge host is

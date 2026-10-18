@@ -31,6 +31,7 @@ from typing import Callable, Protocol
 
 from musegadget.ble_framing import ChunkAssembler, encode_chunks
 from musegadget.identity import Identity
+from musegadget.network import CURRENT_CONNECTION_LABEL
 from musegadget.pairing import PairingError, PairingSession
 
 log = logging.getLogger(__name__)
@@ -241,16 +242,18 @@ class SetupController:
         self.send_status("pairing_confirmed", generation)
 
     def _handle_wifi_scan(self) -> None:
-        # Muse-gadget-bridge change: upstream offers an empty network list
-        # when its connectivity probe fails, and the app then exits setup at
-        # the Wi-Fi step (observed live, 2026-10-18). This bridge is wired
-        # into an always-online host, so always offer the current
-        # connection. The probe result is logged for diagnosis and still
-        # gates provisioning itself below.
-        online = self._network.is_online()
-        networks = [self._network.current_connection_entry()]
-        log.info("wifi_scan: connectivity probe online=%s, offering %s",
-                 online, [n.get("ssid") for n in networks])
+        # Muse-gadget-bridge change: never offer the placeholder entry.
+        # Upstream offers the current connection under the placeholder
+        # label CURRENT_CONNECTION_LABEL when no real SSID can be detected,
+        # and the Muse app stops before provisioning when it receives that
+        # label (documented in the SDK's own network tests; observed live
+        # 2026-10-18 — the app exited at the Wi-Fi step on every attempt).
+        # With no real name to offer, send an empty list so the user can
+        # enter their network in the app; a detected SSID, or one
+        # configured via the wifi_ssid option, is still offered by name.
+        entry = self._network.current_connection_entry()
+        networks = [] if entry.get("ssid") == CURRENT_CONNECTION_LABEL else [entry]
+        log.info("wifi_scan: offering %s", [n.get("ssid") for n in networks])
         self.send_encrypted_json({"type": "wifi_scan_result", "networks": networks})
 
     def _handle_provision(self, command: dict) -> None:

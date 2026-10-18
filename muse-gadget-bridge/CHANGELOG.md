@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4
+
+- The Wi-Fi scan no longer offers the placeholder "Use current
+  connection" entry at all: the Muse app stops on that label, and on a
+  wired host it was the only entry. With no real network name detected
+  (or configured via `wifi_ssid`), the scan result is now empty so the
+  user can enter their network name in the app during pairing.
+
 ## 0.1.3
 
 - Fix pairing stopping at the Wi-Fi step: the Muse app only continues to

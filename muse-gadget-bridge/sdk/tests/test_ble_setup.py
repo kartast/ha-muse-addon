@@ -269,9 +269,9 @@ def test_offline_device_reports_wifi_failure_and_can_retry():
     h = Harness(online=False)
     h.pair()
     h.send_encrypted({"action": "wifi_scan"})
-    # Muse-gadget-bridge change: the scan always offers the current
-    # connection (an empty list made the app exit setup); the connectivity
-    # probe still gates provisioning itself, which is what retries here.
+    # Muse-gadget-bridge change: the scan offers the current connection
+    # when its SSID is a real name (see the placeholder test below); the
+    # connectivity probe still gates provisioning itself, which retries.
     assert h.opened()[-1]["networks"] == [{"ssid": "HomeNet", "rssi": -40, "secure": False}]
 
     h.send_encrypted(PROVISION)
@@ -281,6 +281,18 @@ def test_offline_device_reports_wifi_failure_and_can_retry():
     h.network.online = True
     h.send_encrypted(PROVISION)
     h.wait_for_status("auth_ok")
+
+
+def test_scan_never_offers_the_placeholder_label():
+    # Muse-gadget-bridge change: when no real SSID can be detected, the
+    # scan result is empty instead of the placeholder-labelled entry, so
+    # the app lets the user enter their network instead of stopping.
+    h = Harness()
+    h.network.current_connection_entry = lambda: {
+        "ssid": "Use current connection", "rssi": -40, "secure": False}
+    h.pair()
+    h.send_encrypted({"action": "wifi_scan"})
+    assert h.opened()[-1] == {"type": "wifi_scan_result", "networks": []}
 
 
 def test_rejected_token_reports_auth_failed_and_disconnects():
