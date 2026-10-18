@@ -12,11 +12,14 @@ this folder.
 
 Changes versus upstream:
 
-- `src/musegadget/executor.py` — adds four commands
-  (`ha.get_states`, `ha.call_service`, `ha.get_config`, `ha.camera_snapshot`)
+- `src/musegadget/executor.py` — adds seven commands
+  (`ha.get_states`, `ha.call_service`, `ha.get_config`, `ha.camera_snapshot`,
+  `ha.automation_get`, `ha.automation_save`, `ha.automation_delete` — the
+  automation trio since add-on 0.2.0)
   in `COMMAND_SPECS` plus handler branches in `Executor.run`, an audit log
-  for service calls, and a module-docstring note. Everything upstream in the
-  file is untouched; the additions are marked "Home Assistant bridge".
+  for service calls and automation saves/deletes, and a module-docstring
+  note. Everything upstream in the file is untouched; the additions are
+  marked "Home Assistant bridge".
 - `src/musegadget/ble_setup.py` — `SetupController.on_disconnect` no longer
   clears the pairing session. In the field the Muse app drops and re-opens
   the BLE connection between the pairing confirmation and the

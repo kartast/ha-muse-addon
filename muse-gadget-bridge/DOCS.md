@@ -41,10 +41,14 @@ unprivileged `muse` account), plus:
 | `ha.call_service` | Any `domain.service` with any data — lights, locks, alarm, covers, Home Assistant itself |
 | `ha.get_config` | Core configuration (version, location, components) |
 | `ha.camera_snapshot` | A camera's current JPEG, in base64 chunks |
+| `ha.automation_get` | One automation's full configuration (triggers, conditions, actions) by its config id |
+| `ha.automation_save` | Create or update an automation from its full configuration |
+| `ha.automation_delete` | Delete an automation by its config id |
 
 ## Audit log
 
-Every `ha.call_service` call appends one JSON line to `/data/audit.log`
+Every `ha.call_service` call — and every `ha.automation_save` and
+`ha.automation_delete` — appends one JSON line to `/data/audit.log`
 inside the add-on's private data folder (timestamp, service, entity ids,
 success or failure) and prints the same line, prefixed `audit`, to this
 add-on's log. Review past calls in the Log tab or by reading the file from a

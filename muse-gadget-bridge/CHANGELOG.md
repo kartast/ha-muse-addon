@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+
+- Automation management through the bridge: three new commands —
+  `ha.automation_get` (read one automation's full configuration),
+  `ha.automation_save` (create or update an automation from its full
+  configuration; a fresh config id is generated when none is given) and
+  `ha.automation_delete`. They use Home Assistant's automation config
+  API, take effect immediately, and saves/deletes are written to the
+  same audit log as service calls.
+
 ## 0.1.7
 
 - Desktop-pairing fallback: new `identity_import` and `pairing_import`

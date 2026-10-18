@@ -79,6 +79,13 @@ class _Handler(BaseHTTPRequestHandler):
             self._reply(404, {"message": "Entity not found."})
         elif self.path == "/api/config":
             self._reply(200, CONFIG)
+        elif self.path.startswith("/api/config/automation/config/"):
+            config_id = self.path[len("/api/config/automation/config/"):]
+            config = self.server.automation_configs.get(config_id)
+            if config is None:
+                self._reply(404, {"message": "not found"})
+            else:
+                self._reply(200, config)
         elif self.path.startswith("/api/camera_proxy/"):
             entity_id = self.path[len("/api/camera_proxy/"):]
             if entity_id == "camera.front_door":
@@ -91,7 +98,13 @@ class _Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self._authorized():
             return
-        if self.path.startswith("/api/services/"):
+        if self.path.startswith("/api/config/automation/config/"):
+            config_id = self.path[len("/api/config/automation/config/"):]
+            length = int(self.headers.get("Content-Length") or 0)
+            body = json.loads(self.rfile.read(length) or b"{}")
+            self.server.automation_configs[config_id] = body
+            self._reply(200, {"result": "ok"})
+        elif self.path.startswith("/api/services/"):
             parts = self.path[len("/api/services/"):].split("/")
             if len(parts) != 2:
                 self._reply(404, {"message": "not found"})
@@ -116,12 +129,27 @@ class _Handler(BaseHTTPRequestHandler):
             self._reply(404, {"message": "not found"})
 
 
+    def do_DELETE(self):
+        if not self._authorized():
+            return
+        if self.path.startswith("/api/config/automation/config/"):
+            config_id = self.path[len("/api/config/automation/config/"):]
+            if config_id in self.server.automation_configs:
+                del self.server.automation_configs[config_id]
+                self._reply(200, {"result": "ok"})
+            else:
+                self._reply(404, {"message": "not found"})
+        else:
+            self._reply(404, {"message": "not found"})
+
+
 class FakeCore:
     """Context manager: a running fake Core on an ephemeral loopback port."""
 
     def __enter__(self):
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
         self.server.service_calls = []
+        self.server.automation_configs = {}
         self.port = self.server.server_address[1]
         import threading
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
@@ -139,3 +167,7 @@ class FakeCore:
     @property
     def service_calls(self):
         return self.server.service_calls
+
+    @property
+    def automation_configs(self):
+        return self.server.automation_configs

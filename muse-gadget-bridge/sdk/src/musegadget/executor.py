@@ -161,6 +161,44 @@ COMMAND_SPECS = {
         },
         "timeout_ms": 70000,
     },
+    "ha.automation_get": {
+        "description": (
+            "Fetch one Home Assistant automation's full configuration (alias, triggers, "
+            "conditions, actions) by its config id — the \"id\" attribute on the automation "
+            "entity in ha.get_states."
+        ),
+        "required": {
+            "config_id": {"type": "string", "description": "The automation's config id, e.g. \"1787560838960\"."},
+        },
+        "optional": {},
+    },
+    "ha.automation_save": {
+        "description": (
+            "Create or update a Home Assistant automation from its full configuration object "
+            "(alias, triggers, conditions, actions — the same shape the Home Assistant UI "
+            "saves). Without config_id a new automation is created and its id returned; with "
+            "config_id that automation's configuration is replaced. Every save is written to "
+            "the audit log (/data/audit.log) and the device log."
+        ),
+        "required": {
+            "config": {"type": "object", "description": "The automation configuration as a JSON object."},
+        },
+        "optional": {
+            "config_id": {"type": "string", "description": "An existing automation's config id to update; omit to create a new automation."},
+        },
+        "timeout_ms": 70000,
+    },
+    "ha.automation_delete": {
+        "description": (
+            "Delete a Home Assistant automation by its config id. Every deletion is written "
+            "to the audit log (/data/audit.log) and the device log."
+        ),
+        "required": {
+            "config_id": {"type": "string", "description": "The automation's config id, e.g. \"1787560838960\"."},
+        },
+        "optional": {},
+        "timeout_ms": 70000,
+    },
 }
 
 # --- Home Assistant bridge (add-on only) ------------------------------------
@@ -174,6 +212,7 @@ HA_MAX_PAYLOAD_BYTES = 96 * 1024  # same per-message budget as system.run output
 SNAPSHOT_CHUNK_BYTES = 64 * 1024  # same chunk size as file.read
 AUDIT_LOG_DEFAULT = "/data/audit.log"
 _HA_NAME = re.compile(r"[a-z0-9_]+")
+_HA_CONFIG_ID = re.compile(r"[A-Za-z0-9_-]+")
 
 
 class HaError(Exception):
@@ -316,6 +355,12 @@ class Executor:
             return ok(config if isinstance(config, dict) else {"config": config})
         if command == "ha.camera_snapshot":
             return self.ha_camera_snapshot(params)
+        if command == "ha.automation_get":
+            return self.ha_automation_get(params)
+        if command == "ha.automation_save":
+            return self.ha_automation_save(params)
+        if command == "ha.automation_delete":
+            return self.ha_automation_delete(params)
         return error(f"unsupported command: {command}")
 
     def _ha_request(self, method: str, path: str, body: dict | None = None,
@@ -437,20 +482,64 @@ class Executor:
             "data_b64": base64.b64encode(chunk).decode("ascii"),
         })
 
-    @staticmethod
-    def _ha_audit(domain: str, service: str, entity_ids: list, ok_: bool,
-                  detail: str = "") -> None:
-        """One audit line per service call: /data/audit.log and stdout.
+    # -- Automation configuration (create / read / update / delete) ---------
+    # Home Assistant's config API: /config/automation/config/<config_id>.
+    # The config id is the "id" attribute on the automation entity (see
+    # ha.get_states). Saving or deleting takes effect immediately; Core
+    # reloads the automation component itself.
 
-        Never fails the caller: a broken audit sink is logged, not raised.
-        """
+    @staticmethod
+    def _valid_config_id(params: dict) -> str | None:
+        config_id = params.get("config_id")
+        if not isinstance(config_id, str) or not _HA_CONFIG_ID.fullmatch(config_id):
+            return None
+        return config_id
+
+    def ha_automation_get(self, params: dict) -> dict:
+        config_id = self._valid_config_id(params)
+        if config_id is None:
+            return error("config_id is required: the \"id\" attribute of an automation entity")
+        _, _, config = self._ha_request("GET", f"/config/automation/config/{config_id}")
+        return ok({"config_id": config_id, "config": config})
+
+    def ha_automation_save(self, params: dict) -> dict:
+        config = params.get("config")
+        if not isinstance(config, dict) or not config:
+            return error("config must be a non-empty JSON object (an automation configuration)")
+        if params.get("config_id") is None:
+            config_id = str(int(time.time() * 1000))
+        else:
+            config_id = self._valid_config_id(params)
+            if config_id is None:
+                return error("config_id must be a non-empty id string (letters, digits, - and _)")
+        try:
+            self._ha_request("POST", f"/config/automation/config/{config_id}", body=config)
+        except HaError as exc:
+            self._ha_audit_automation("ha.automation_save", config_id, ok_=False,
+                                      detail=str(exc))
+            raise
+        self._ha_audit_automation("ha.automation_save", config_id, ok_=True,
+                                  detail=str(config.get("alias") or ""))
+        return ok({"config_id": config_id, "saved": True})
+
+    def ha_automation_delete(self, params: dict) -> dict:
+        config_id = self._valid_config_id(params)
+        if config_id is None:
+            return error("config_id is required: the \"id\" attribute of an automation entity")
+        try:
+            self._ha_request("DELETE", f"/config/automation/config/{config_id}")
+        except HaError as exc:
+            self._ha_audit_automation("ha.automation_delete", config_id, ok_=False,
+                                      detail=str(exc))
+            raise
+        self._ha_audit_automation("ha.automation_delete", config_id, ok_=True)
+        return ok({"config_id": config_id, "deleted": True})
+
+    @staticmethod
+    def _write_audit_record(record: dict) -> None:
         line = json.dumps({
             "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
-            "command": "ha.call_service",
-            "service": f"{domain}.{service}",
-            "entity_ids": entity_ids,
-            "ok": ok_,
-            **({"detail": detail} if detail else {}),
+            **record,
         })
         print(f"audit {line}", flush=True)
         log.info("audit %s", line)
@@ -460,6 +549,32 @@ class Executor:
                 f.write(line + "\n")
         except OSError as exc:
             log.warning("could not write audit log: %s", exc)
+
+    @staticmethod
+    def _ha_audit(domain: str, service: str, entity_ids: list, ok_: bool,
+                  detail: str = "") -> None:
+        """One audit line per service call: /data/audit.log and stdout.
+
+        Never fails the caller: a broken audit sink is logged, not raised.
+        """
+        Executor._write_audit_record({
+            "command": "ha.call_service",
+            "service": f"{domain}.{service}",
+            "entity_ids": entity_ids,
+            "ok": ok_,
+            **({"detail": detail} if detail else {}),
+        })
+
+    @staticmethod
+    def _ha_audit_automation(command: str, config_id: str, ok_: bool,
+                             detail: str = "") -> None:
+        """One audit line per automation save/delete, same sinks as _ha_audit."""
+        Executor._write_audit_record({
+            "command": command,
+            "config_id": config_id,
+            "ok": ok_,
+            **({"detail": detail} if detail else {}),
+        })
 
 
 def _read_available(pipe, deadline: float) -> tuple[bytes, bool]:
